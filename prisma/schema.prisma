@@ -1,0 +1,737 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model - simplified for platform users only
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String?
+  password          String
+  role              UserRole @default(CUSTOMER)
+  emailVerified     DateTime?
+  avatar            String?
+  phone             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations - Only for platform-level users (sellers, admins)
+  sellerProfile     SellerProfile?
+  adminProfile      AdminProfile?
+  sessions          Session[]
+  accounts          Account[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+// User roles
+enum UserRole {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+// StoreCustomer model - Store-specific customer accounts like Shopify
+model StoreCustomer {
+  id          String   @id @default(cuid())
+  storeId     String
+  email       String
+  password    String?  // Can have password for store accounts
+  firstName   String?
+  lastName    String?
+  phone       String?
+  acceptsMarketing Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  // Relations
+  addresses      Address[]
+  orders         Order[]
+  reviews        Review[]
+  wishlists      WishlistItem[]
+  carts          CartItem[]
+  paymentMethods PaymentMethod[]
+
+  @@unique([storeId, email]) // Unique email per store
+  @@map("store_customers")
+}
+
+// Seller profile
+model SellerProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  storeName           String
+  storeDescription    String?
+  storeLogo           String?
+  storeBanner         String?
+  businessEmail       String?
+  businessPhone       String?
+  businessAddress     String?
+  taxId               String?
+  website             String?
+  socialMedia         Json?    // Store social media links
+  customDomain        String?
+  domainVerified      Boolean  @default(false)
+  domainVerificationToken String?
+  subscriptionPlan    SubscriptionPlan @default(FREE)
+  subscriptionEndsAt  DateTime?
+  isApproved          Boolean  @default(false)
+  approvalStatus      ApprovalStatus @default(PENDING)
+  rating              Float    @default(0)
+  totalSales          Float    @default(0)
+  commissionRate      Float    @default(0.05) // 5% default commission
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  stores              Store[]
+  products            Product[]
+  orders              Order[]
+  subscriptions       Subscription[]
+  payouts             Payout[]
+  sellerAnalytics     SellerAnalytics[]
+  notifications       Notification[]
+
+  @@map("seller_profiles")
+}
+
+// Admin profile
+model AdminProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  permissions Json?    // Store admin permissions
+  department  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+// Store model - NOW INDEPENDENT like Shopify stores
+model Store {
+  id              String   @id @default(cuid())
+  sellerId        String
+  name            String
+  slug            String   @unique
+  description     String?
+  logo            String?
+  banner          String?
+  theme           Json?    // Store theme settings
+  settings        Json?    // Store settings
+  isActive        Boolean  @default(true)
+  customDomain    String?
+  domainVerified  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  // Relations - Store now owns its own data
+  products        Product[]
+  categories      Category[]
+  orders          Order[]
+  storeAnalytics  StoreAnalytics[]
+  customers       StoreCustomer[] // Store's own customers
+  cartItems       CartItem[]      // Store's cart items
+  wishlistItems   WishlistItem[]  // Store's wishlist items
+  reviews         Review[]        // Store's reviews
+  addresses       Address[]       // Store's customer addresses
+  paymentMethods  PaymentMethod[] // Store's payment methods
+
+  @@map("stores")
+}
+
+// Product model
+model Product {
+  id              String   @id @default(cuid())
+  storeId         String
+  sellerId        String
+  name            String
+  slug            String
+  description     String?
+  shortDescription String?
+  sku             String   @unique
+  price           Float
+  comparePrice    Float?
+  cost            Float?
+  weight          Float?
+  dimensions      Json?    // {length, width, height}
+  images          Json?    // Array of image URLs
+  videoUrl        String?
+  status          ProductStatus @default(DRAFT)
+  featured        Boolean  @default(false)
+  trackInventory  Boolean  @default(true)
+  inventory       Int      @default(0)
+  lowStockThreshold Int    @default(10)
+  requiresShipping Boolean  @default(true)
+  taxable         Boolean  @default(true)
+  tags            String?  // Comma-separated tags
+  seoTitle        String?
+  seoDescription  String?
+  metaFields      Json?    // Custom meta fields
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  store  Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  seller SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  categories      ProductCategory[]
+  variants        ProductVariant[]
+  reviews         Review[]
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+  wishlistItems   WishlistItem[]
+  productAnalytics ProductAnalytics[]
+
+  @@map("products")
+}
+
+// Product variants
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  name        String
+  sku         String   @unique
+  price       Float?
+  comparePrice Float?
+  weight      Float?
+  inventory   Int      @default(0)
+  image       String?
+  position    Int      @default(0)
+  options     Json     // Variant options (e.g., {color: "Red", size: "L"})
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Relations
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@map("product_variants")
+}
+
+// Category model
+model Category {
+  id          String   @id @default(cuid())
+  storeId     String?
+  name        String
+  slug        String
+  description String?
+  image       String?
+  parentId    String?
+  position    Int      @default(0)
+  isActive    Boolean  @default(true)
+  seoTitle    String?
+  seoDescription String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store   Store?  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  parent  Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  // Relations
+  products ProductCategory[]
+
+  @@map("categories")
+}
+
+// Product-Category junction table
+model ProductCategory {
+  productId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+// Order model - NOW STORE-SPECIFIC
+model Order {
+  id                String       @id @default(cuid())
+  orderNumber       String       @unique
+  customerId        String       // Now references StoreCustomer
+  storeId           String       // Required - every order belongs to a store
+  sellerId          String?      // Optional - can be derived from store
+  status            OrderStatus  @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  currency          String       @default("USD")
+  subtotal          Float
+  tax               Float        @default(0)
+  shipping          Float        @default(0)
+  discount          Float        @default(0)
+  total             Float
+  notes             String?
+  customerInfo      Json?        // Customer information at time of order
+  shippingAddress   Json?        // Shipping address
+  billingAddress    Json?        // Billing address
+  trackingNumber    String?
+  trackingUrl       String?
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  cancelledAt       DateTime?
+  cancellationReason String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  customer StoreCustomer  @relation(fields: [customerId], references: [id])
+  store    Store          @relation(fields: [storeId], references: [id])
+  seller   SellerProfile? @relation(fields: [sellerId], references: [id])
+
+  // Relations
+  items         OrderItem[]
+  transactions  Transaction[]
+  reviews       Review[]
+  orderAnalytics OrderAnalytics[]
+
+  @@map("orders")
+}
+
+// Order items
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  variantId   String?
+  name        String
+  sku         String
+  price       Float
+  quantity    Int
+  total       Float
+  image       String?
+  options     Json?    // Selected options
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("order_items")
+}
+
+// Transaction model
+model Transaction {
+  id                String           @id @default(cuid())
+  orderId           String
+  paymentMethodId   String?
+  gateway           String           // stripe, paypal, etc.
+  gatewayTransactionId String?
+  amount            Float
+  currency          String           @default("USD")
+  status            TransactionStatus @default(PENDING)
+  failureReason     String?
+  metadata          Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("transactions")
+}
+
+// Payment methods - NOW STORE-SPECIFIC
+model PaymentMethod {
+  id            String           @id @default(cuid())
+  customerId    String           // Now references StoreCustomer
+  storeId       String           // Store-specific payment methods
+  type          PaymentMethodType
+  provider      String           // stripe, paypal, etc.
+  providerId    String?          // External provider ID
+  last4         String?
+  expiryMonth   Int?
+  expiryYear    Int?
+  brand         String?
+  isDefault     Boolean          @default(false)
+  billingAddress Json?
+  metadata      Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  customer    StoreCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  store       Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("payment_methods")
+}
+
+// Address model - NOW STORE-SPECIFIC
+model Address {
+  id          String   @id @default(cuid())
+  customerId  String   // Now references StoreCustomer
+  storeId     String   // Store-specific addresses
+  type        AddressType
+  firstName   String
+  lastName    String
+  company     String?
+  address1    String
+  address2    String?
+  city        String
+  province    String?
+  country     String
+  postalCode  String
+  phone       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer StoreCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  store    Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+// Cart model - NOW STORE-SPECIFIC
+model CartItem {
+  id         String   @id @default(cuid())
+  customerId String   // Now references StoreCustomer
+  storeId    String   // Store-specific cart
+  productId  String
+  variantId  String?
+  quantity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer StoreCustomer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  store    Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product  Product         @relation(fields: [productId], references: [id])
+  variant  ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@unique([customerId, storeId, productId, variantId])
+  @@map("cart_items")
+}
+
+// Wishlist model - NOW STORE-SPECIFIC
+model WishlistItem {
+  id         String   @id @default(cuid())
+  customerId String   // Now references StoreCustomer
+  storeId    String   // Store-specific wishlist
+  productId  String
+  createdAt  DateTime @default(now())
+
+  customer StoreCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  store    Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product  Product       @relation(fields: [productId], references: [id])
+
+  @@unique([customerId, storeId, productId])
+  @@map("wishlist_items")
+}
+
+// Review model - NOW STORE-SPECIFIC
+model Review {
+  id          String   @id @default(cuid())
+  productId   String
+  customerId  String   // Now references StoreCustomer
+  storeId     String   // Store-specific reviews
+  orderId     String?
+  rating      Int      // 1-5
+  title       String?
+  content     String?
+  images      Json?    // Array of image URLs
+  isVerified  Boolean  @default(false)
+  isApproved  Boolean  @default(false)
+  helpful     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer StoreCustomer @relation(fields: [customerId], references: [id])
+  store    Store         @relation(fields: [storeId], references: [id])
+  product  Product       @relation(fields: [productId], references: [id])
+  order    Order?        @relation(fields: [orderId], references: [id])
+
+  @@map("reviews")
+}
+
+// Subscription model
+model Subscription {
+  id              String           @id @default(cuid())
+  sellerId        String
+  plan            SubscriptionPlan
+  status          SubscriptionStatus @default(ACTIVE)
+  amount          Float
+  currency        String           @default("USD")
+  interval        String           // monthly, yearly
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean @default(false)
+  canceledAt         DateTime?
+  endedAt            DateTime?
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// Payout model
+model Payout {
+  id            String   @id @default(cuid())
+  sellerId      String
+  amount        Float
+  currency      String   @default("USD")
+  status        PayoutStatus @default(PENDING)
+  periodStart   DateTime
+  periodEnd     DateTime
+  method        String   // bank_transfer, paypal, etc.
+  methodDetails Json?    // Payment method details
+  fees          Float    @default(0)
+  netAmount     Float
+  notes         String?
+  processedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@map("payouts")
+}
+
+// Notification model
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  sellerId  String?
+  title     String
+  message   String
+  type      NotificationType
+  data      Json?            // Additional data
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seller SellerProfile? @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Analytics models
+model SellerAnalytics {
+  id            String   @id @default(cuid())
+  sellerId      String
+  date          DateTime
+  revenue       Float    @default(0)
+  orders        Int      @default(0)
+  visitors      Int      @default(0)
+  conversionRate Float   @default(0)
+  topProducts   Json?    // Top performing products
+  createdAt     DateTime @default(now())
+
+  seller SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, date])
+  @@map("seller_analytics")
+}
+
+model StoreAnalytics {
+  id            String   @id @default(cuid())
+  storeId       String
+  date          DateTime
+  revenue       Float    @default(0)
+  orders        Int      @default(0)
+  visitors      Int      @default(0)
+  pageViews     Int      @default(0)
+  conversionRate Float   @default(0)
+  topProducts   Json?
+  topPages      Json?
+  createdAt     DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date])
+  @@map("store_analytics")
+}
+
+model ProductAnalytics {
+  id            String   @id @default(cuid())
+  productId     String
+  date          DateTime
+  views         Int      @default(0)
+  addToCarts    Int      @default(0)
+  purchases     Int      @default(0)
+  revenue       Float    @default(0)
+  conversionRate Float   @default(0)
+  createdAt     DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, date])
+  @@map("product_analytics")
+}
+
+model OrderAnalytics {
+  id            String   @id @default(cuid())
+  orderId       String
+  date          DateTime
+  eventType     String   // created, paid, shipped, delivered, cancelled
+  eventData     Json?
+  createdAt     DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_analytics")
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Enums
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+  OUT_OF_STOCK
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  CANCELLED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  STRIPE
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  TRIALING
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_UPDATED
+  PAYMENT_RECEIVED
+  PRODUCT_LOW_STOCK
+  PRODUCT_OUT_OF_STOCK
+  NEW_REVIEW
+  ACCOUNT_UPDATED
+  SUBSCRIPTION_RENEWAL
+  DOMAIN_VERIFICATION
+  SYSTEM_ANNOUNCEMENT
+}
