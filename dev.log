@@ -5,3 +5,64 @@
 [32m[nodemon] starting `npx tsx server.ts`[39m
 > Ready on http://127.0.0.1:3000
 > Socket.IO server running at ws://127.0.0.1:3000/api/socketio
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 2.2s (363 modules)
+ GET /api/health 200 in 2323ms
+ ✓ Compiled /api/seed-data in 359ms (369 modules)
+ POST /api/seed-data 200 in 648ms
+ ✓ Compiled /api/auth/login in 365ms (449 modules)
+ POST /api/auth/login 200 in 522ms
+ ✓ Compiled /middleware in 393ms (108 modules)
+ ✓ Compiled /api/store/[slug]/products in 119ms (451 modules)
+Store products fetch error: Error [PrismaClientValidationError]: 
+Invalid `prisma.product.findMany()` invocation:
+
+{
+  where: {
+    storeId: "cmh87kvzw00043vchmijtw92r",
+    status: "ACTIVE"
+  },
+  orderBy: {
+    featured: "desc",
+    createdAt: "desc"
+  },
+  ~~~~~~~~~~~~~~~~~~~
+  include: {
+    categories: {
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    },
+    variants: {
+      where: {
+        inventory: {
+          gt: 0
+        }
+      },
+      orderBy: {
+        position: "asc"
+      }
+    }
+  }
+}
+
+Argument `orderBy`: Invalid value provided. Expected ProductOrderByWithRelationInput[], provided Object.
+    at async GET (src/app/api/store/[slug]/products/route.ts:25:21)
+  23 |
+  24 |     // Fetch products for the store
+> 25 |     const products = await db.product.findMany({
+     |                     ^
+  26 |       where: { 
+  27 |         storeId: store.id,
+  28 |         status: 'ACTIVE' {
+  clientVersion: '6.17.1'
+}
+ GET /api/store/demo-store/products 500 in 997ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3s (952 modules)
+ GET / 200 in 3388ms
