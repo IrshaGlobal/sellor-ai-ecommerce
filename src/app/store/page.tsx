@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 export default function StorePage() {
-  const [cartItems, setCartItems] = useState([])
+  const [cartItems, setCartItems] = useState<any[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 

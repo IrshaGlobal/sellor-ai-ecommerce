@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -42,6 +42,7 @@ export async function PATCH(
       }
 
       const { status } = await request.json()
+      const params = await context.params
       const orderId = params.id
       const storeId = user.sellerProfile.stores[0].id
 

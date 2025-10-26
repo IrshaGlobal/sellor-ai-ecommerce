@@ -3,9 +3,10 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const params = await context.params
     const storeSlug = params.slug
 
     // First get the store
@@ -31,10 +32,14 @@ export async function GET(
         createdAt: 'desc'
       },
       include: {
-        category: {
-          select: {
-            id: true,
-            name: true
+        categories: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         },
         variants: {

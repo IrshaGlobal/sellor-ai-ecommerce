@@ -20,7 +20,13 @@ export default function NewProductPage() {
   const [store, setStore] = useState<any>(null)
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [hasVariants, setHasVariants] = useState(false)
-  const [variants, setVariants] = useState([
+  const [variants, setVariants] = useState<Array<{
+    name: string;
+    sku: string;
+    price: string;
+    inventory: string;
+    options: { size?: string; color?: string; material?: string; [key: string]: string | undefined };
+  }>>([
     { name: '', sku: '', price: '', inventory: '', options: {} }
   ])
   const [categories, setCategories] = useState<any[]>([])

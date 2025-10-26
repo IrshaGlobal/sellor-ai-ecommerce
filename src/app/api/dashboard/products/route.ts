@@ -96,12 +96,19 @@ export async function POST(request: NextRequest) {
           images: productData.images || [],
           storeId,
           sellerId,
-          categoryId: productData.categoryId,
           slug: productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           sku: `PRD-${Date.now()}`, // Generate unique SKU
           trackInventory: true,
           requiresShipping: true,
-          taxable: true
+          taxable: true,
+          // Create category relation if provided
+          ...(productData.categoryId && {
+            categories: {
+              create: {
+                categoryId: productData.categoryId
+              }
+            }
+          })
         }
       })
 
