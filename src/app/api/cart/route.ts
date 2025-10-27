@@ -110,11 +110,7 @@ export async function GET(request: NextRequest) {
     const cartItems = await db.cartItem.findMany({
       where: { customerId },
       include: {
-        product: {
-          include: {
-            images: true
-          }
-        }
+        product: true
       }
     })
 

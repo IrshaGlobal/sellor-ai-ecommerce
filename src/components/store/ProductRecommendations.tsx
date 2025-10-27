@@ -20,6 +20,7 @@ interface Product {
     name: string
   }
   featured: boolean
+  status?: string
 }
 
 interface Recommendation {

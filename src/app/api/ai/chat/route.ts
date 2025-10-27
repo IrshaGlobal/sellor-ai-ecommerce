@@ -42,7 +42,7 @@ Guidelines:
 - Always end with a helpful question or offer of further assistance`
 
     // Build conversation history
-    const messages = [
+    const messages: Array<{role: "user" | "system" | "assistant"; content: string}> = [
       {
         role: 'system',
         content: systemPrompt
@@ -52,10 +52,13 @@ Guidelines:
     // Add conversation history if provided
     if (conversationHistory && Array.isArray(conversationHistory)) {
       conversationHistory.forEach((msg: any) => {
-        messages.push({
-          role: msg.role,
-          content: msg.content
-        })
+        const role = msg.role as "user" | "system" | "assistant"
+        if (role === "user" || role === "system" || role === "assistant") {
+          messages.push({
+            role,
+            content: msg.content
+          })
+        }
       })
     }
 

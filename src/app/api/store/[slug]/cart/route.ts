@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
     const customerId = request.headers.get('x-customer-id')
@@ -22,11 +22,7 @@ export async function GET(
         storeId: storeId
       },
       include: {
-        product: {
-          include: {
-            images: true
-          }
-        },
+        product: true,
         variant: true
       }
     })
@@ -54,7 +50,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
     const customerId = request.headers.get('x-customer-id')
@@ -154,7 +150,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
     const customerId = request.headers.get('x-customer-id')

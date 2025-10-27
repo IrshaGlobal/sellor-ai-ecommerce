@@ -3,16 +3,17 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: Request,
-  { params }: { params: { domain: string } }
+  context: { params: Promise<{ domain: string }> }
 ) {
   try {
+    const params = await context.params
     const domain = params.domain
 
     // Find store by custom domain
     const store = await db.store.findFirst({
       where: {
         customDomain: domain,
-        status: 'ACTIVE'
+        isActive: true
       },
       select: {
         id: true,

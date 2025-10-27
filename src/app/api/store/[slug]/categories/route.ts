@@ -3,9 +3,10 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const params = await context.params
     const storeSlug = params.slug
 
     // First get the store
@@ -32,7 +33,9 @@ export async function GET(
           select: {
             products: {
               where: {
-                status: 'ACTIVE'
+                product: {
+                  status: 'ACTIVE'
+                }
               }
             }
           }

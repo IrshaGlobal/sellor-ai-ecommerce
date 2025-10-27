@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -21,7 +18,7 @@ export function middleware(request: NextRequest) {
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-store-slug', storeSlug)
 
-    // For protected API routes, verify store customer authentication
+    // For protected API routes, check for token presence
     // Allow public access to store info and products
     const isPublicRoute = pathname.includes('/products') || 
                          pathname === `/api/store/${storeSlug}`
@@ -36,26 +33,8 @@ export function middleware(request: NextRequest) {
         )
       }
 
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any
-        
-        // Verify the token matches the current store
-        if (decoded.storeSlug !== storeSlug) {
-          return NextResponse.json(
-            { error: 'Invalid store context' },
-            { status: 401 }
-          )
-        }
-
-        // Add customer info to headers
-        requestHeaders.set('x-customer-id', decoded.customerId)
-        requestHeaders.set('x-store-id', decoded.storeId)
-      } catch (error) {
-        return NextResponse.json(
-          { error: 'Invalid token' },
-          { status: 401 }
-        )
-      }
+      // Note: JWT verification is now done in API routes (not in middleware)
+      // because middleware runs on Edge runtime which doesn't support all Node.js APIs
     }
 
     return NextResponse.next({

@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password if provided
-    let hashedPassword = null
+    let hashedPassword: string | null = null
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10)
     }
