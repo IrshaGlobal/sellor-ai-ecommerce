@@ -32,30 +32,20 @@ export default function ProductsPage() {
   }, [])
 
   const checkAuthAndFetchProducts = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/auth')
-      return
-    }
-
     try {
       // Fetch user data to get store
-      const userResponse = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const userResponse = await fetch('/api/auth/me', { credentials: 'include' })
 
       if (userResponse.ok) {
         const userData = await userResponse.json()
         
-        if (userData.user.role !== 'SELLER' || !userData.user.sellerProfile?.store) {
+        if (userData.user.role !== 'SELLER' || !userData.user.sellerProfile?.stores || userData.user.sellerProfile.stores.length === 0) {
           router.push('/dashboard')
           return
         }
 
         // Fetch products
-        await fetchProducts(userData.user.sellerProfile.store.id)
+        await fetchProducts(userData.user.sellerProfile.stores[0].id)
       } else {
         router.push('/auth')
       }
@@ -69,7 +59,9 @@ export default function ProductsPage() {
 
   const fetchProducts = async (storeId: string) => {
     try {
-      const response = await fetch(`/api/dashboard/products?storeId=${storeId}`)
+      const response = await fetch(`/api/dashboard/products?storeId=${storeId}`, {
+        credentials: 'include'
+      })
       if (response.ok) {
         const data = await response.json()
         setProducts(data)
@@ -86,7 +78,8 @@ export default function ProductsPage() {
 
     try {
       const response = await fetch(`/api/dashboard/products/${productId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       })
 
       if (response.ok) {

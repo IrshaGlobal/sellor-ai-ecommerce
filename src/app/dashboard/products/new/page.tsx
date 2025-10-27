@@ -55,7 +55,9 @@ export default function NewProductPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`/api/dashboard/categories?storeId=${store.id}`)
+      const response = await fetch(`/api/dashboard/categories?storeId=${store.id}`, {
+        credentials: 'include'
+      })
       if (response.ok) {
         const data = await response.json()
         setCategories(data)
@@ -66,17 +68,9 @@ export default function NewProductPage() {
   }
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/auth')
-      return
-    }
-
     try {
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -122,8 +116,6 @@ export default function NewProductPage() {
     setIsLoading(true)
 
     try {
-      const token = localStorage.getItem('token')
-      
       // Prepare product data
       const productData: any = {
         name: formData.name,
@@ -145,9 +137,9 @@ export default function NewProductPage() {
       const response = await fetch('/api/dashboard/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(productData)
       })
 

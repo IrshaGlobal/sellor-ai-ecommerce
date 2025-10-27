@@ -25,17 +25,9 @@ export default function NewCategoryPage() {
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/auth')
-      return
-    }
-
     try {
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -61,13 +53,12 @@ export default function NewCategoryPage() {
     setIsLoading(true)
 
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch('/api/dashboard/categories', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: formData.name,
           description: formData.description

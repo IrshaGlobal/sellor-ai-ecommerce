@@ -65,17 +65,9 @@ export default function OrdersPage() {
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/auth')
-      return
-    }
-
     try {
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -85,9 +77,8 @@ export default function OrdersPage() {
           router.push('/dashboard')
           return
         }
-
-        setStore(userData.user.sellerProfile.stores[0])
-        fetchOrders(userData.user.sellerProfile.stores[0].id)
+    setStore(userData.user.sellerProfile.stores[0])
+    fetchOrders(userData.user.sellerProfile.stores[0].id)
       } else {
         router.push('/auth')
       }
@@ -101,7 +92,9 @@ export default function OrdersPage() {
 
   const fetchOrders = async (storeId: string) => {
     try {
-      const response = await fetch(`/api/dashboard/orders?storeId=${storeId}`)
+      const response = await fetch(`/api/dashboard/orders?storeId=${storeId}`, {
+        credentials: 'include'
+      })
       if (response.ok) {
         const data = await response.json()
         setOrders(data)
@@ -113,13 +106,12 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch(`/api/dashboard/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ status })
       })
 

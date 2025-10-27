@@ -7,14 +7,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let token: string | null = null
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7)
+    } else {
+      token = request.cookies.get('seller_token')?.value ?? null
+    }
+
+    if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },
         { status: 401 }
       )
     }
-
-    const token = authHeader.substring(7)
     
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any

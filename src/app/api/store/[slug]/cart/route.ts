@@ -6,6 +6,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params
     const customerId = request.headers.get('x-customer-id')
     const storeId = request.headers.get('x-store-id')
 
@@ -53,6 +54,7 @@ export async function POST(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params
     const customerId = request.headers.get('x-customer-id')
     const storeId = request.headers.get('x-store-id')
 
@@ -153,6 +155,7 @@ export async function DELETE(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params
     const customerId = request.headers.get('x-customer-id')
     const storeId = request.headers.get('x-store-id')
 

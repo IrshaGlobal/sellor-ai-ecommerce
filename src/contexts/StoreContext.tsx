@@ -1,6 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface StoreCustomer {
   id: string
@@ -27,43 +28,33 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined)
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const [customer, setCustomer] = useState<StoreCustomer | null>(null)
   const [storeSlug, setStoreSlug] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Extract store slug from current path
-    const path = window.location.pathname
-    if (path.startsWith('/store/')) {
-      const slug = path.split('/')[2]
+    if (pathname.startsWith('/store/')) {
+      const slug = pathname.split('/')[2]
       setStoreSlug(slug)
+    } else {
+      setStoreSlug(null)
     }
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
-    // Check for existing token on mount and when storeSlug changes
     if (storeSlug) {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('store_token='))
-        ?.split('=')[1]
-
-      if (token) {
-        verifyToken(token)
-      } else {
-        setIsLoading(false)
-      }
+      verifySession()
     } else {
+      setCustomer(null)
       setIsLoading(false)
     }
   }, [storeSlug])
 
-  const verifyToken = async (token: string) => {
+  const verifySession = async () => {
     try {
       const response = await fetch('/api/auth/verify-store-token', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -71,33 +62,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setCustomer(data.customer)
         setStoreSlug(data.customer.store.slug)
       } else {
-        // Remove invalid token
-        document.cookie = 'store_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+        setCustomer(null)
       }
     } catch (error) {
       console.error('Token verification failed:', error)
-      // Remove invalid token
-      document.cookie = 'store_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      setCustomer(null)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const login = async (email: string, password: string, storeSlug: string) => {
+  const login = useCallback(async (email: string, password: string, storeSlug: string) => {
     try {
       const response = await fetch('/api/auth/store-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password, storeSlug }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        setCustomer(data.customer)
-        setStoreSlug(storeSlug)
+        await verifySession()
         return { success: true }
       } else {
         return { success: false, error: data.error }
@@ -105,9 +94,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       return { success: false, error: 'Network error' }
     }
-  }
+  }, [])
 
-  const register = async (
+  const register = useCallback(async (
     email: string, 
     password: string, 
     firstName: string, 
@@ -120,6 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ 
           email, 
           password, 
@@ -133,8 +123,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        setCustomer(data.customer)
-        setStoreSlug(storeSlug)
+        await verifySession()
         return { success: true }
       } else {
         return { success: false, error: data.error }
@@ -142,24 +131,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       return { success: false, error: 'Network error' }
     }
-  }
+  }, [])
 
-  const logout = () => {
-    // Remove token
-    document.cookie = 'store_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+  const logout = useCallback(() => {
+    fetch('/api/auth/store-logout', {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(() => null)
     setCustomer(null)
     // Don't reset storeSlug as it should come from URL
-  }
+  }, [])
+
+  const contextValue = useMemo(() => ({
+    customer,
+    storeSlug,
+    isLoading,
+    login,
+    register,
+    logout
+  }), [customer, storeSlug, isLoading, login, register, logout])
 
   return (
-    <StoreContext.Provider value={{
-      customer,
-      storeSlug,
-      isLoading,
-      login,
-      register,
-      logout
-    }}>
+    <StoreContext.Provider value={contextValue}>
       {children}
     </StoreContext.Provider>
   )

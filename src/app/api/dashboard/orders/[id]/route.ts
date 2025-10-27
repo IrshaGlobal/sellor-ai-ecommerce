@@ -42,14 +42,15 @@ export async function PATCH(
       }
 
       const { status } = await request.json()
-      const params = await context.params
-      const orderId = params.id
+  const params = await context.params
+  const orderId = params.id
+  const id = orderId
       const storeId = user.sellerProfile.stores[0].id
 
       // Verify order belongs to store
       const order = await db.order.findFirst({
         where: { 
-          id: orderId,
+          id,
           storeId 
         }
       })
@@ -63,7 +64,7 @@ export async function PATCH(
 
       // Update order status
       const updatedOrder = await db.order.update({
-        where: { id: orderId },
+        where: { id },
         data: { status }
       })
 

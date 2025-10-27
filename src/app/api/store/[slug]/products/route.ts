@@ -11,7 +11,7 @@ export async function GET(
 
     // First get the store
     const store = await db.store.findUnique({
-      where: { slug: storeSlug }
+      where: { slug }
     })
 
     if (!store) {

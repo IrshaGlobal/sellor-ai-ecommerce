@@ -11,7 +11,7 @@ export async function GET(
 
     // Fetch store by slug
     const store = await db.store.findUnique({
-      where: { slug: storeSlug },
+      where: { slug },
       include: {
         seller: {
           select: {

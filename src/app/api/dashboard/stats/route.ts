@@ -16,6 +16,27 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : request.cookies.get('seller_token')?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'No token provided' },
+        { status: 401 }
+      )
+    }
+
+    try {
+      jwt.verify(token, JWT_SECRET)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
     // Get stats (placeholder for now)
     const stats = {
       totalProducts: 0,

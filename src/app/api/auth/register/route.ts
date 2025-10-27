@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,11 +90,31 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({
+    const token = jwt.sign(
+      {
+        userId: userWithStore!.id,
+        email: userWithStore!.email,
+        role: userWithStore!.role
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    )
+
+    const response = NextResponse.json({
       message: 'Store created successfully',
       user: userWithStore,
-      store: store
+      store
     })
+
+    response.cookies.set('seller_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/'
+    })
+
+    return response
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(

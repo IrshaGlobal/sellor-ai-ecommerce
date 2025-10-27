@@ -41,19 +41,9 @@ export default function Dashboard() {
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/auth')
-      return
-    }
-
     try {
       // Fetch user data
-      const userResponse = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const userResponse = await fetch('/api/auth/me', { credentials: 'include' })
 
       if (userResponse.ok) {
         const userData = await userResponse.json()
@@ -87,7 +77,9 @@ export default function Dashboard() {
 
   const fetchStats = async (storeId: string) => {
     try {
-      const response = await fetch(`/api/dashboard/stats?storeId=${storeId}`)
+      const response = await fetch(`/api/dashboard/stats?storeId=${storeId}`, {
+        credentials: 'include'
+      })
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -98,9 +90,14 @@ export default function Dashboard() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/auth')
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+      .catch(() => null)
+      .finally(() => {
+        router.push('/auth')
+      })
   }
 
   if (isLoading) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import ZAI from 'z-ai-web-dev-sdk'
+import ZAI, { ChatMessage } from 'z-ai-web-dev-sdk'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,7 +42,7 @@ Guidelines:
 - Always end with a helpful question or offer of further assistance`
 
     // Build conversation history
-    const messages: Array<{role: "user" | "system" | "assistant"; content: string}> = [
+  const messages: Array<{role: "user" | "system" | "assistant"; content: string}> = [
       {
         role: 'system',
         content: systemPrompt

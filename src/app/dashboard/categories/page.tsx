@@ -31,17 +31,9 @@ export default function CategoriesPage() {
   }, [])
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/auth')
-      return
-    }
-
     try {
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -53,7 +45,7 @@ export default function CategoriesPage() {
         }
 
         setStore(userData.user.sellerProfile.stores[0])
-        fetchCategories(userData.user.sellerProfile.stores[0].id)
+  fetchCategories(userData.user.sellerProfile.stores[0].id)
       } else {
         router.push('/auth')
       }
@@ -67,7 +59,9 @@ export default function CategoriesPage() {
 
   const fetchCategories = async (storeId: string) => {
     try {
-      const response = await fetch(`/api/dashboard/categories?storeId=${storeId}`)
+      const response = await fetch(`/api/dashboard/categories?storeId=${storeId}`, {
+        credentials: 'include'
+      })
       if (response.ok) {
         const data = await response.json()
         setCategories(data)
@@ -83,12 +77,9 @@ export default function CategoriesPage() {
     }
 
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch(`/api/dashboard/categories/${categoryId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {

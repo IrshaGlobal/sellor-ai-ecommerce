@@ -48,14 +48,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : request.cookies.get('seller_token')?.value
+
+    if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },
         { status: 401 }
       )
     }
-
-    const token = authHeader.substring(7)
     
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any
