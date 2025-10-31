@@ -7,11 +7,11 @@ export async function GET(
 ) {
   try {
     const params = await context.params
-    const storeSlug = params.slug
+    const slug = params.slug
 
     // First get the store
     const store = await db.store.findUnique({
-      where: { slug: storeSlug }
+      where: { slug }
     })
 
     if (!store) {
@@ -23,7 +23,7 @@ export async function GET(
 
     // Fetch categories for the store
     const categories = await db.category.findMany({
-      where: { 
+      where: {
         storeId: store.id,
         isActive: true
       },
