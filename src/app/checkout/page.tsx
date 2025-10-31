@@ -356,8 +356,8 @@ export default function CheckoutPage() {
 
                 {/* Place Order Button */}
                 <form onSubmit={handleSubmit}>
-                  <Button type="submit" className="w-full" size="lg">
-                    Place Order
+                  <Button type="submit" className="w-full" size="lg" disabled={isProcessing}>
+                    {isProcessing ? 'Processing...' : 'Place Order'}
                   </Button>
                 </form>
 
@@ -374,6 +374,7 @@ export default function CheckoutPage() {
             </Card>
           </div>
         </div>
+        )}
       </div>
     </div>
   )
