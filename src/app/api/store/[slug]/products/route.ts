@@ -7,11 +7,11 @@ export async function GET(
 ) {
   try {
     const params = await context.params
-    const storeSlug = params.slug
+    const slug = params.slug
 
     // First get the store
     const store = await db.store.findUnique({
-      where: { slug: storeSlug }
+      where: { slug }
     })
 
     if (!store) {
@@ -23,11 +23,11 @@ export async function GET(
 
     // Fetch products for the store
     const products = await db.product.findMany({
-      where: { 
+      where: {
         storeId: store.id,
         status: 'ACTIVE'
       },
-      orderBy: { 
+      orderBy: {
         featured: 'desc',
         createdAt: 'desc'
       },
