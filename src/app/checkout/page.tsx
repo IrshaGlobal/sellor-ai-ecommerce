@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +9,19 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, ShoppingCart, CreditCard, Truck, Shield } from 'lucide-react'
 
+interface CartItem {
+  id: string
+  quantity: number
+  product: {
+    id: string
+    name: string
+    price: number
+    images?: string[]
+  }
+}
+
 export default function CheckoutPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -23,24 +36,30 @@ export default function CheckoutPage() {
     nameOnCard: ''
   })
 
-  // Mock cart data - in a real app, this would come from cart state
-  const cartItems = [
-    {
-      id: 1,
-      name: 'Premium Wireless Headphones',
-      price: 299.99,
-      quantity: 1
-    },
-    {
-      id: 2,
-      name: 'Smart Watch Pro',
-      price: 199.99,
-      quantity: 2
-    }
-  ]
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
 
-  const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0)
-  const shipping = 9.99
+  useEffect(() => {
+    fetchCartItems()
+  }, [])
+
+  const fetchCartItems = async () => {
+    try {
+      const response = await fetch('/api/cart')
+      if (response.ok) {
+        const items = await response.json()
+        setCartItems(items)
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart items:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const subtotal = cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+  const shipping = cartItems.length > 0 ? 9.99 : 0
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
 
@@ -51,10 +70,33 @@ export default function CheckoutPage() {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // In a real app, this would process the payment
-    alert('Order placed successfully! This is a demo.')
+
+    if (!formData.email || !formData.firstName || !formData.lastName || !formData.address || !formData.city || !formData.zipCode || !formData.country) {
+      alert('Please fill in all shipping information')
+      return
+    }
+
+    if (cartItems.length === 0) {
+      alert('Your cart is empty')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      // In a real app, this would process payment through a payment gateway
+      // For now, we'll simulate a successful order
+      alert('Order placed successfully!')
+      // Clear cart and redirect
+      setCartItems([])
+      router.push('/')
+    } catch (error) {
+      console.error('Error placing order:', error)
+      alert('Failed to place order. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   return (
