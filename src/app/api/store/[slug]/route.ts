@@ -7,11 +7,11 @@ export async function GET(
 ) {
   try {
     const params = await context.params
-    const storeSlug = params.slug
+    const slug = params.slug
 
     // Fetch store by slug
     const store = await db.store.findUnique({
-      where: { slug: storeSlug },
+      where: { slug },
       include: {
         seller: {
           select: {
