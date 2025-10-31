@@ -23,6 +23,10 @@ interface DashboardStats {
   totalOrders: number
   totalRevenue: number
   totalCustomers: number
+  orderTrend?: Array<{ date: string; count: number }>
+  revenueTrend?: Array<{ date: string; amount: number }>
+  topProducts?: Array<{ id: string; name: string; sold: number }>
+  recentOrders?: Array<{ id: string; customer: string; amount: number; date: string }>
 }
 
 export default function Dashboard() {
