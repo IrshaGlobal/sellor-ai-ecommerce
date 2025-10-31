@@ -6,6 +6,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await context.params
     const customerId = request.headers.get('x-customer-id')
     const storeId = request.headers.get('x-store-id')
 
@@ -53,6 +54,7 @@ export async function POST(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await context.params
     const customerId = request.headers.get('x-customer-id')
     const storeId = request.headers.get('x-store-id')
 
@@ -92,7 +94,7 @@ export async function POST(
       const variant = await db.productVariant.findUnique({
         where: { id: variantId }
       })
-      
+
       if (!variant || variant.inventory < quantity) {
         return NextResponse.json(
           { error: 'Insufficient inventory' },
@@ -153,6 +155,7 @@ export async function DELETE(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await context.params
     const customerId = request.headers.get('x-customer-id')
     const storeId = request.headers.get('x-store-id')
 
