@@ -277,26 +277,131 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Order Trend Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Store Performance</CardTitle>
+              <CardTitle>Orders (Last 30 Days)</CardTitle>
               <CardDescription>
-                Your store's recent activity
+                Daily order count trend
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <BarChart3 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-600 mb-4">
-                  Analytics coming soon! Track your sales, visitors, and more.
-                </p>
-                <Button variant="outline" asChild>
-                  <Link href="/dashboard/analytics">
-                    View Analytics
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
+              {stats.orderTrend && stats.orderTrend.length > 0 ? (
+                <div className="h-48 flex items-end justify-between gap-1">
+                  {stats.orderTrend.map((trend, idx) => {
+                    const maxCount = Math.max(...stats.orderTrend!.map(t => t.count), 1)
+                    const heightPercent = (trend.count / maxCount) * 100
+                    return (
+                      <div
+                        key={idx}
+                        className="flex-1 bg-primary/60 hover:bg-primary rounded-t-sm transition-colors"
+                        style={{ height: `${heightPercent || 5}%`, minHeight: '4px' }}
+                        title={`${trend.date}: ${trend.count} orders`}
+                      />
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-gray-500">
+                  No order data yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Revenue Trend Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue (Last 30 Days)</CardTitle>
+              <CardDescription>
+                Daily revenue trend
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats.revenueTrend && stats.revenueTrend.length > 0 ? (
+                <div className="h-48 flex items-end justify-between gap-1">
+                  {stats.revenueTrend.map((trend, idx) => {
+                    const maxAmount = Math.max(...stats.revenueTrend!.map(t => t.amount), 1)
+                    const heightPercent = (trend.amount / maxAmount) * 100
+                    return (
+                      <div
+                        key={idx}
+                        className="flex-1 bg-green-600/60 hover:bg-green-600 rounded-t-sm transition-colors"
+                        style={{ height: `${heightPercent || 5}%`, minHeight: '4px' }}
+                        title={`${trend.date}: $${trend.amount.toFixed(2)}`}
+                      />
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-gray-500">
+                  No revenue data yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tables Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Products */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Products</CardTitle>
+              <CardDescription>
+                Best-selling products
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats.topProducts && stats.topProducts.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.topProducts.map((product, idx) => (
+                    <div key={product.id} className="flex items-center justify-between pb-3 border-b last:border-b-0">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-bold text-primary">#{idx + 1}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-gray-500">{product.sold} sold</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{product.sold}</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No sales data yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Orders */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Orders</CardTitle>
+              <CardDescription>
+                Latest orders from customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats.recentOrders && stats.recentOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.recentOrders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between pb-3 border-b last:border-b-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{order.customer}</p>
+                        <p className="text-xs text-gray-500">{order.date}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-medium">${order.amount.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No orders yet</p>
+              )}
             </CardContent>
           </Card>
         </div>
