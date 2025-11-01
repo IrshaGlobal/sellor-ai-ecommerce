@@ -56,15 +56,13 @@ export default function StoreAuthPage() {
       const response = await fetch(`/api/auth/store-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password, storeSlug: slug })
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        // Store customer token for this specific store
-        localStorage.setItem(`customer_token_${slug}`, data.token)
-        localStorage.setItem(`customer_${slug}`, JSON.stringify(data.customer))
         setMessage('Login successful! Redirecting...')
         setTimeout(() => router.push(`/store/${slug}`), 1000)
       } else {
@@ -99,6 +97,7 @@ export default function StoreAuthPage() {
       const response = await fetch(`/api/auth/store-register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           firstName, 
           lastName, 
@@ -111,8 +110,8 @@ export default function StoreAuthPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setMessage('Account created successfully! Redirecting...')
-        setTimeout(() => router.push(`/store/${slug}`), 1500)
+  setMessage('Account created successfully! Redirecting...')
+  setTimeout(() => router.push(`/store/${slug}`), 1500)
       } else {
         setMessage(data.error || 'Registration failed')
       }
@@ -203,11 +202,6 @@ export default function StoreAuthPage() {
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
                 </form>
-                <div className="mt-4 text-center">
-                  <Link href={`/store/${slug}/auth/forgot-password`} className="text-sm text-primary hover:underline">
-                    Forgot your password?
-                  </Link>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
